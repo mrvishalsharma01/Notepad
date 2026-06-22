@@ -107,6 +107,7 @@ function getDefaultKeybinds() {
         emergencyErase: isMac ? 'Cmd+Shift+E' : 'Ctrl+Shift+E',
         increaseTransparency: isMac ? 'Cmd+=' : 'Ctrl+=',
         decreaseTransparency: isMac ? 'Cmd+-' : 'Ctrl+-',
+        toggleFocusMode: isMac ? 'Cmd+Shift+F' : 'Ctrl+Shift+F',
     };
 }
 
@@ -359,6 +360,30 @@ function updateGlobalShortcuts(keybinds, mainWindow, sendToRenderer, geminiSessi
             }
         });
     }
+
+    // Register toggle focus mode shortcut
+    if (keybinds.toggleFocusMode) {
+        try {
+            globalShortcut.register(keybinds.toggleFocusMode, () => {
+                const isFocusable = mainWindow.isFocusable();
+                const newFocusable = !isFocusable;
+                mainWindow.setFocusable(newFocusable);
+                console.log(`Focusable state toggled to: ${newFocusable}`);
+
+                // Save state to preferences
+                storage.updatePreference('focusFreeMode', !newFocusable);
+
+                // Notify renderer process to update UI checkbox
+                mainWindow.webContents.send('apply-focus-free', !newFocusable);
+
+                // Notify user in the status bar
+                sendToRenderer('update-status', newFocusable ? 'Normal Mode' : 'Assessment Mode (Focus-Free)');
+            });
+            console.log(`Registered toggleFocusMode: ${keybinds.toggleFocusMode}`);
+        } catch (error) {
+            console.error(`Failed to register toggleFocusMode (${keybinds.toggleFocusMode}):`, error);
+        }
+    }
 }
 
 function setupWindowIpcHandlers(mainWindow, sendToRenderer, geminiSessionRef) {
@@ -366,6 +391,15 @@ function setupWindowIpcHandlers(mainWindow, sendToRenderer, geminiSessionRef) {
         if (!mainWindow.isDestroyed()) {
             if (view !== 'assistant') {
                 mainWindow.setIgnoreMouseEvents(false);
+                mainWindow.setFocusable(true);
+            } else {
+                const prefs = storage.getPreferences();
+                const focusFree = prefs.focusFreeMode ?? false;
+                mainWindow.setFocusable(!focusFree);
+                console.log(`Entered assistant view, set focusable to: ${!focusFree}`);
+                if (focusFree) {
+                    sendToRenderer('update-status', 'Assessment Mode (Focus-Free)');
+                }
             }
         }
     });

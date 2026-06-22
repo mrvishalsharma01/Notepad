@@ -785,6 +785,21 @@ ipcRenderer.on('apply-transparency', (event, alpha) => {
     }
 });
 
+// Listen for focus-free updates from main process shortcuts
+ipcRenderer.on('apply-focus-free', (event, isEnabled) => {
+    const appEl = cheatingDaddy.element();
+    if (appEl) {
+        // Update CustomizeView if it's currently rendered so the checkbox matches
+        if (appEl.currentView === 'customize') {
+            const customizeView = appEl.shadowRoot.querySelector('customize-view');
+            if (customizeView) {
+                customizeView.focusFreeMode = isEnabled;
+                customizeView.requestUpdate();
+            }
+        }
+    }
+});
+
 // Handle shortcuts based on current view
 function handleShortcut(shortcutKey) {
     const currentView = cheatingDaddy.getCurrentView();

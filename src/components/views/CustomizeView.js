@@ -182,6 +182,7 @@ export class CustomizeView extends LitElement {
         layoutMode: { type: String },
         keybinds: { type: Object },
         googleSearchEnabled: { type: Boolean },
+        focusFreeMode: { type: Boolean },
         backgroundTransparency: { type: Number },
         fontSize: { type: Number },
         theme: { type: String },
@@ -213,6 +214,7 @@ export class CustomizeView extends LitElement {
         this.clearStatusType = '';
         this.backgroundTransparency = 0.8;
         this.fontSize = 20;
+        this.focusFreeMode = false;
         this.audioMode = 'speaker_only';
         this.customPrompt = '';
         this.theme = 'dark';
@@ -232,6 +234,7 @@ export class CustomizeView extends LitElement {
             this.audioMode = prefs.audioMode ?? 'speaker_only';
             this.customPrompt = prefs.customPrompt ?? '';
             this.theme = prefs.theme ?? 'dark';
+            this.focusFreeMode = prefs.focusFreeMode ?? false;
             if (keybinds) {
                 this.keybinds = { ...this.getDefaultKeybinds(), ...keybinds };
             }
@@ -305,6 +308,7 @@ export class CustomizeView extends LitElement {
             scrollDown: isMac ? 'Cmd+Shift+Down' : 'Ctrl+Shift+Down',
             increaseTransparency: isMac ? 'Cmd+=' : 'Ctrl+=',
             decreaseTransparency: isMac ? 'Cmd+-' : 'Ctrl+-',
+            toggleFocusMode: isMac ? 'Cmd+Shift+F' : 'Ctrl+Shift+F',
         };
     }
 
@@ -323,6 +327,7 @@ export class CustomizeView extends LitElement {
             { key: 'scrollDown', name: 'Scroll Response Down', description: 'Scroll response content downward' },
             { key: 'increaseTransparency', name: 'Increase Transparency', description: 'Make background more transparent (lower opacity)' },
             { key: 'decreaseTransparency', name: 'Decrease Transparency', description: 'Make background less transparent (more solid)' },
+            { key: 'toggleFocusMode', name: 'Toggle Focus-Free Mode', description: 'Toggle Assessment (Focus-Free) Mode on/off' },
         ];
     }
 
@@ -383,6 +388,12 @@ export class CustomizeView extends LitElement {
                 console.error('Failed to notify main process:', error);
             }
         }
+        this.requestUpdate();
+    }
+
+    async handleFocusFreeModeChange(e) {
+        this.focusFreeMode = e.target.checked;
+        await cheatingDaddy.storage.updatePreference('focusFreeMode', this.focusFreeMode);
         this.requestUpdate();
     }
 
@@ -493,6 +504,7 @@ export class CustomizeView extends LitElement {
                 fontSize: 20,
                 backgroundTransparency: 0.8,
                 googleSearchEnabled: false,
+                focusFreeMode: false,
                 theme: 'dark',
             };
             for (const [key, value] of Object.entries(defaults)) {
@@ -515,6 +527,7 @@ export class CustomizeView extends LitElement {
             this.fontSize = defaults.fontSize;
             this.backgroundTransparency = defaults.backgroundTransparency;
             this.googleSearchEnabled = defaults.googleSearchEnabled;
+            this.focusFreeMode = defaults.focusFreeMode;
             this.customPrompt = defaults.customPrompt;
             this.theme = defaults.theme;
 
@@ -689,6 +702,35 @@ export class CustomizeView extends LitElement {
         `;
     }
 
+    renderAssessmentSection() {
+        return html`
+            <section class="surface">
+                <div class="surface-title">Assessment Settings</div>
+                <div class="form-grid">
+                    <div class="toggle-row" style="margin-top: 4px;">
+                        <input
+                            type="checkbox"
+                            class="toggle-input"
+                            id="focusFreeMode"
+                            .checked=${this.focusFreeMode}
+                            @change=${this.handleFocusFreeModeChange}
+                        />
+                        <label class="toggle-label" for="focusFreeMode"> Focus-Free Mode (Assessment Mode) </label>
+                    </div>
+                    <div style="font-size: var(--font-size-xs); color: var(--text-secondary); line-height: 1.4; padding-left: var(--space-sm);">
+                        When enabled, clicking or interacting with the overlay window will NOT steal keyboard focus from the browser or full-screen
+                        test window. This prevents full-screen exit warnings on technical assessment platforms.
+                        <br />
+                        <span style="color: var(--warning); display: inline-block; margin-top: 6px;"
+                            >Note: You will not be able to type into the overlay's text bar in this mode. Use the keybind
+                            <strong>${this.keybinds.toggleFocusMode || 'Ctrl+Shift+F'}</strong> to toggle this mode on/off at any time.</span
+                        >
+                    </div>
+                </div>
+            </section>
+        `;
+    }
+
     renderPrivacySection() {
         return html`
             <section class="surface danger-surface">
@@ -713,8 +755,8 @@ export class CustomizeView extends LitElement {
             <div class="unified-page">
                 <div class="unified-wrap">
                     <div class="page-title">Settings</div>
-                    ${this.renderAudioSection()} ${this.renderLanguageSection()} ${this.renderAppearanceSection()} ${this.renderKeyboardSection()}
-                    ${this.renderPrivacySection()}
+                    ${this.renderAudioSection()} ${this.renderLanguageSection()} ${this.renderAppearanceSection()} ${this.renderAssessmentSection()}
+                    ${this.renderKeyboardSection()} ${this.renderPrivacySection()}
                 </div>
             </div>
         `;
