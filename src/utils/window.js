@@ -320,18 +320,8 @@ function updateGlobalShortcuts(keybinds, mainWindow, sendToRenderer, geminiSessi
                     sendToRenderer('apply-transparency', newAlpha);
                     console.log('New transparency (alpha):', newAlpha);
                 });
-                require('fs').appendFileSync(
-                    path.join(__dirname, '../../shortcut-debug.log'),
-                    `increaseTransparency (${key}) registered: ${success}\n`,
-                    'utf8'
-                );
                 console.log(`Registered increaseTransparency (${key}) - Success: ${success}`);
             } catch (error) {
-                require('fs').appendFileSync(
-                    path.join(__dirname, '../../shortcut-debug.log'),
-                    `increaseTransparency (${key}) error: ${error.message}\n`,
-                    'utf8'
-                );
                 console.error(`Failed to register increaseTransparency (${key}):`, error);
             }
         });
@@ -353,18 +343,8 @@ function updateGlobalShortcuts(keybinds, mainWindow, sendToRenderer, geminiSessi
                     sendToRenderer('apply-transparency', newAlpha);
                     console.log('New transparency (alpha):', newAlpha);
                 });
-                require('fs').appendFileSync(
-                    path.join(__dirname, '../../shortcut-debug.log'),
-                    `decreaseTransparency (${key}) registered: ${success}\n`,
-                    'utf8'
-                );
                 console.log(`Registered decreaseTransparency (${key}) - Success: ${success}`);
             } catch (error) {
-                require('fs').appendFileSync(
-                    path.join(__dirname, '../../shortcut-debug.log'),
-                    `decreaseTransparency (${key}) error: ${error.message}\n`,
-                    'utf8'
-                );
                 console.error(`Failed to register decreaseTransparency (${key}):`, error);
             }
         });
