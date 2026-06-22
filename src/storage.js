@@ -319,9 +319,14 @@ function incrementLimitCount(model) {
     }
 
     // Increment the appropriate model count
-    if (model === 'gemini-2.5-flash') {
+    if (model.includes('2.5-flash') && !model.includes('lite')) {
         todayEntry.flash.count++;
-    } else if (model === 'gemini-2.5-flash-lite') {
+    } else if (
+        model.includes('2.5-flash-lite') ||
+        model.includes('3.1-flash-lite') ||
+        model.includes('1.5-flash-lite') ||
+        model.includes('2.0-flash')
+    ) {
         todayEntry.flashLite.count++;
     }
 
@@ -347,15 +352,14 @@ function incrementCharUsage(provider, model, charCount) {
 function getAvailableModel() {
     const todayLimits = getTodayLimits();
 
-    // RPD limits: flash = 20, flash-lite = 20
-    // After both exhausted, fall back to flash (for paid API users)
-    if (todayLimits.flash.count < 20) {
+    // Prioritize lite models first for ultra-low latency and robustness against 503s
+    if (todayLimits.flashLite.count < 20) {
+        return 'gemini-3.1-flash-lite';
+    } else if (todayLimits.flash.count < 20) {
         return 'gemini-2.5-flash';
-    } else if (todayLimits.flashLite.count < 20) {
-        return 'gemini-2.5-flash-lite';
     }
 
-    return 'gemini-2.5-flash'; // Default to flash for paid API users
+    return 'gemini-3.1-flash-lite'; // Default to 3.1-flash-lite
 }
 
 function getModelForToday() {
