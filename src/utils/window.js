@@ -329,7 +329,7 @@ function updateGlobalShortcuts(keybinds, mainWindow, sendToRenderer, geminiSessi
 
     // Register decrease transparency shortcut
     if (keybinds.decreaseTransparency) {
-        const decreaseKeys = [keybinds.decreaseTransparency, 'Ctrl+Minus', 'Ctrl+-', 'CmdOrCtrl+-', 'CmdOrCtrl+Minus'];
+        const decreaseKeys = [keybinds.decreaseTransparency, 'Ctrl+-', 'CmdOrCtrl+-'];
         decreaseKeys.forEach(key => {
             try {
                 if (globalShortcut.isRegistered(key)) return;
