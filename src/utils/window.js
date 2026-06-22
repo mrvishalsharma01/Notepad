@@ -4,7 +4,7 @@ const storage = require('../storage');
 
 let mouseEventsIgnored = false;
 
-const DEFAULT_MAIN_WINDOW_SIZE = { width: 1100, height: 800 };
+const DEFAULT_MAIN_WINDOW_SIZE = { width: 800, height: 550 };
 const MIN_WINDOW_SIZE = { width: 700, height: 320 };
 
 function createWindow(sendToRenderer, geminiSessionRef) {
@@ -105,6 +105,8 @@ function getDefaultKeybinds() {
         scrollUp: isMac ? 'Cmd+Shift+Up' : 'Ctrl+Shift+Up',
         scrollDown: isMac ? 'Cmd+Shift+Down' : 'Ctrl+Shift+Down',
         emergencyErase: isMac ? 'Cmd+Shift+E' : 'Ctrl+Shift+E',
+        increaseTransparency: isMac ? 'Cmd+=' : 'Ctrl+=',
+        decreaseTransparency: isMac ? 'Cmd+-' : 'Ctrl+-',
     };
 }
 
@@ -291,6 +293,72 @@ function updateGlobalShortcuts(keybinds, mainWindow, sendToRenderer, geminiSessi
             console.error(`Failed to register emergencyErase (${keybinds.emergencyErase}):`, error);
         }
     }
+
+    // Register increase transparency shortcut
+    if (keybinds.increaseTransparency) {
+        const increaseKeys = [keybinds.increaseTransparency, 'Ctrl+Plus', 'Ctrl+=', 'CmdOrCtrl+=', 'CmdOrCtrl+Plus'];
+        increaseKeys.forEach(key => {
+            try {
+                if (globalShortcut.isRegistered(key)) return;
+                const success = globalShortcut.register(key, () => {
+                    console.log(`Increase transparency shortcut (${key}) triggered`);
+                    const prefs = storage.getPreferences();
+                    let currentAlpha = prefs.backgroundTransparency ?? 0.8;
+                    // Transparency increases -> more see-through -> lower alpha/opacity
+                    const newAlpha = Math.max(0.1, parseFloat((currentAlpha - 0.1).toFixed(1)));
+                    storage.updatePreference('backgroundTransparency', newAlpha);
+                    sendToRenderer('apply-transparency', newAlpha);
+                    console.log('New transparency (alpha):', newAlpha);
+                });
+                require('fs').appendFileSync(
+                    path.join(__dirname, '../../shortcut-debug.log'),
+                    `increaseTransparency (${key}) registered: ${success}\n`,
+                    'utf8'
+                );
+                console.log(`Registered increaseTransparency (${key}) - Success: ${success}`);
+            } catch (error) {
+                require('fs').appendFileSync(
+                    path.join(__dirname, '../../shortcut-debug.log'),
+                    `increaseTransparency (${key}) error: ${error.message}\n`,
+                    'utf8'
+                );
+                console.error(`Failed to register increaseTransparency (${key}):`, error);
+            }
+        });
+    }
+
+    // Register decrease transparency shortcut
+    if (keybinds.decreaseTransparency) {
+        const decreaseKeys = [keybinds.decreaseTransparency, 'Ctrl+Minus', 'Ctrl+-', 'CmdOrCtrl+-', 'CmdOrCtrl+Minus'];
+        decreaseKeys.forEach(key => {
+            try {
+                if (globalShortcut.isRegistered(key)) return;
+                const success = globalShortcut.register(key, () => {
+                    console.log(`Decrease transparency shortcut (${key}) triggered`);
+                    const prefs = storage.getPreferences();
+                    let currentAlpha = prefs.backgroundTransparency ?? 0.8;
+                    // Transparency decreases -> less see-through -> higher alpha/opacity
+                    const newAlpha = Math.min(1.0, parseFloat((currentAlpha + 0.1).toFixed(1)));
+                    storage.updatePreference('backgroundTransparency', newAlpha);
+                    sendToRenderer('apply-transparency', newAlpha);
+                    console.log('New transparency (alpha):', newAlpha);
+                });
+                require('fs').appendFileSync(
+                    path.join(__dirname, '../../shortcut-debug.log'),
+                    `decreaseTransparency (${key}) registered: ${success}\n`,
+                    'utf8'
+                );
+                console.log(`Registered decreaseTransparency (${key}) - Success: ${success}`);
+            } catch (error) {
+                require('fs').appendFileSync(
+                    path.join(__dirname, '../../shortcut-debug.log'),
+                    `decreaseTransparency (${key}) error: ${error.message}\n`,
+                    'utf8'
+                );
+                console.error(`Failed to register decreaseTransparency (${key}):`, error);
+            }
+        });
+    }
 }
 
 function setupWindowIpcHandlers(mainWindow, sendToRenderer, geminiSessionRef) {
@@ -332,6 +400,18 @@ function setupWindowIpcHandlers(mainWindow, sendToRenderer, geminiSessionRef) {
         }
     });
 
+    ipcMain.handle('get-window-bounds', () => {
+        if (!mainWindow.isDestroyed()) {
+            return mainWindow.getBounds();
+        }
+        return { width: 0, height: 0 };
+    });
+
+    ipcMain.on('window-resize', (event, { width, height }) => {
+        if (!mainWindow.isDestroyed()) {
+            mainWindow.setSize(width, height);
+        }
+    });
 }
 
 module.exports = {
