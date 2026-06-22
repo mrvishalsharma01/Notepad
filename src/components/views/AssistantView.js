@@ -322,6 +322,7 @@ export class AssistantView extends LitElement {
         onSendText: { type: Function },
         shouldAnimateResponse: { type: Boolean },
         isAnalyzing: { type: Boolean, state: true },
+        focusFreeMode: { type: Boolean },
     };
 
     constructor() {
@@ -332,6 +333,7 @@ export class AssistantView extends LitElement {
         this.onSendText = () => {};
         this.isAnalyzing = false;
         this._animFrame = null;
+        this.focusFreeMode = false;
     }
 
     getProfileNames() {
@@ -723,7 +725,13 @@ export class AssistantView extends LitElement {
 
             <div class="input-bar">
                 <div class="input-bar-inner">
-                    <input type="text" id="textInput" placeholder="Type a message..." @keydown=${this.handleTextKeydown} />
+                    <input
+                        type="text"
+                        id="textInput"
+                        placeholder=${this.focusFreeMode ? 'Focus-Free (Press Ctrl+Shift+F to type)' : 'Type a message...'}
+                        ?disabled=${this.focusFreeMode}
+                        @keydown=${this.handleTextKeydown}
+                    />
                 </div>
                 <button class="analyze-btn ${this.isAnalyzing ? 'analyzing' : ''}" @click=${this.handleScreenAnswer}>
                     <canvas class="analyze-canvas"></canvas>

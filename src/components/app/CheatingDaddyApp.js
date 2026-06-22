@@ -403,6 +403,7 @@ export class CheatingDaddyApp extends LitElement {
         _storageLoaded: { state: true },
         _updateAvailable: { state: true },
         _whisperDownloading: { state: true },
+        _focusFreeMode: { state: true },
     };
 
     constructor() {
@@ -429,7 +430,7 @@ export class CheatingDaddyApp extends LitElement {
         this._updateAvailable = false;
         this._whisperDownloading = false;
         this._localVersion = '';
-
+        this._focusFreeMode = false;
         this._loadFromStorage();
         this._checkForUpdates();
     }
@@ -470,6 +471,7 @@ export class CheatingDaddyApp extends LitElement {
             this.selectedScreenshotInterval = prefs.selectedScreenshotInterval || '5';
             this.selectedImageQuality = prefs.selectedImageQuality || 'medium';
             this.layoutMode = config.layout || 'normal';
+            this._focusFreeMode = prefs.focusFreeMode ?? false;
 
             this._storageLoaded = true;
             this.requestUpdate();
@@ -495,6 +497,10 @@ export class CheatingDaddyApp extends LitElement {
             ipcRenderer.on('whisper-downloading', (_, downloading) => {
                 this._whisperDownloading = downloading;
             });
+            ipcRenderer.on('apply-focus-free', (_, isEnabled) => {
+                this._focusFreeMode = isEnabled;
+                this.requestUpdate();
+            });
         }
     }
 
@@ -509,6 +515,7 @@ export class CheatingDaddyApp extends LitElement {
             ipcRenderer.removeAllListeners('click-through-toggled');
             ipcRenderer.removeAllListeners('reconnect-failed');
             ipcRenderer.removeAllListeners('whisper-downloading');
+            ipcRenderer.removeAllListeners('apply-focus-free');
         }
     }
 
@@ -849,6 +856,7 @@ export class CheatingDaddyApp extends LitElement {
                     <assistant-view
                         .responses=${this.responses}
                         .currentResponseIndex=${this.currentResponseIndex}
+                        .focusFreeMode=${this._focusFreeMode}
                         .selectedProfile=${this.selectedProfile}
                         .onSendText=${msg => this.handleSendText(msg)}
                         .shouldAnimateResponse=${this.shouldAnimateResponse}
