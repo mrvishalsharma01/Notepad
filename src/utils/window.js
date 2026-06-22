@@ -49,6 +49,15 @@ function createWindow(sendToRenderer, geminiSessionRef) {
     if (process.platform === 'win32') {
         try {
             mainWindow.setSkipTaskbar(true);
+            mainWindow.on('focus', () => {
+                mainWindow.setSkipTaskbar(true);
+            });
+            mainWindow.on('blur', () => {
+                mainWindow.setSkipTaskbar(true);
+            });
+            mainWindow.on('show', () => {
+                mainWindow.setSkipTaskbar(true);
+            });
         } catch (error) {
             console.warn('Could not hide from taskbar:', error.message);
         }
@@ -368,6 +377,9 @@ function updateGlobalShortcuts(keybinds, mainWindow, sendToRenderer, geminiSessi
                 const isFocusable = mainWindow.isFocusable();
                 const newFocusable = !isFocusable;
                 mainWindow.setFocusable(newFocusable);
+                if (process.platform === 'win32') {
+                    mainWindow.setSkipTaskbar(true);
+                }
                 console.log(`Focusable state toggled to: ${newFocusable}`);
 
                 // Save state to preferences
@@ -392,10 +404,16 @@ function setupWindowIpcHandlers(mainWindow, sendToRenderer, geminiSessionRef) {
             if (view !== 'assistant') {
                 mainWindow.setIgnoreMouseEvents(false);
                 mainWindow.setFocusable(true);
+                if (process.platform === 'win32') {
+                    mainWindow.setSkipTaskbar(true);
+                }
             } else {
                 const prefs = storage.getPreferences();
                 const focusFree = prefs.focusFreeMode ?? false;
                 mainWindow.setFocusable(!focusFree);
+                if (process.platform === 'win32') {
+                    mainWindow.setSkipTaskbar(true);
+                }
                 console.log(`Entered assistant view, set focusable to: ${!focusFree}`);
                 if (focusFree) {
                     sendToRenderer('update-status', 'Assessment Mode (Focus-Free)');
